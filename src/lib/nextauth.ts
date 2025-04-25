@@ -1,14 +1,26 @@
-import { NextAuthOptions, DefaultSession, getServerSession } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import prisma from "./db";
+import { type GetServerSidePropsContext } from "next";
+import {
+  getServerSession,
+  type NextAuthOptions,
+  type DefaultSession,
+} from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import prisma from "./db";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      // ...other properties
+      // role: UserRole;
     } & DefaultSession["user"];
   }
+
+  // interface User {
+  //   // ...other properties
+  //   // role: UserRole;
+  // }
 }
 
 declare module "next-auth/jwt" {
@@ -21,20 +33,17 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    // facilitan nuestras sesiones y tokens
     jwt: async ({ token }) => {
       const db_user = await prisma.user.findFirst({
         where: {
           email: token?.email,
         },
       });
-
       if (db_user) {
         token.id = db_user.id;
       }
-
       return token;
     },
     session: ({ session, token }) => {
@@ -44,7 +53,6 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email;
         session.user.image = token.picture;
       }
-
       return session;
     },
   },
