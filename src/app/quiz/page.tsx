@@ -1,3 +1,9 @@
-export default function Home() {
-  return <h1>Hello world</h1>;
-}
+import React from "react";
+
+type Props = {};
+
+const QuizPage = (props: Props) => {
+  return <div>QuizPage</div>;
+};
+
+export default QuizPage;
