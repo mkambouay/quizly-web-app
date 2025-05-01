@@ -11,12 +11,13 @@ export const POST = async (req: Request, res: Response) => {
   try {
     const session = await getAuthSession();
 
-    if (!session?.user) {
+    //desprotegemos FOR THE SAKE OF THE COURSE, ya aprendere a implementar bien una autenticacion en llamadas
+    /* if (!session?.user) {
       return NextResponse.json(
         { error: "You must be logged in to create a quiz" },
         { status: 401 }
       );
-    }
+    } */
 
     const body = await req.json();
 

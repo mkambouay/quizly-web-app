@@ -24,12 +24,31 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { BookOpen, CopyCheck } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 type Props = {};
 
 type Input = z.infer<typeof quizCreationSchema>;
 
 const QuizCreation = (props: Props) => {
+  const { data: session } = useSession();
+
+  const router = useRouter();
+  const { mutate: getQuestions, isPending } = useMutation({
+    // isLoading se renombró a isPending de la v4 a la v5
+    mutationFn: async ({ amount, topic, type }: Input) => {
+      const response = await axios.post("/api/game", {
+        amount,
+        topic,
+        type,
+      });
+      return response.data;
+    },
+  });
+
   const form = useForm<Input>({
     resolver: zodResolver(quizCreationSchema),
     defaultValues: {
@@ -40,9 +59,24 @@ const QuizCreation = (props: Props) => {
   });
 
   function onSubmit(input: Input) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    //alert(JSON.stringify(input));
+    getQuestions(
+      // llamando al metodo creado por react query, en el state useMutation
+      {
+        amount: input.amount,
+        topic: input.topic,
+        type: input.type,
+      },
+      {
+        onSuccess: ({ gameId }) => {
+          //El onSuccess nos devuelve el response.data que retornamos en el mutateFn, por lo que podemos destructurar y obtener el gameId para redirigir al usuario a la pagina del test creado
+          if (form.getValues("type") === "open_ended") {
+            router.push(`/play/open-ended/${gameId}`);
+          } else {
+            router.push(`/play/mcq/${gameId}`);
+          }
+        },
+      }
+    );
   }
 
   form.watch();
@@ -123,7 +157,9 @@ const QuizCreation = (props: Props) => {
                 </Button>
               </div>
 
-              <Button type="submit">Submit</Button>
+              <Button disabled={isPending} type="submit">
+                Submit
+              </Button>
             </form>
           </Form>
         </CardContent>

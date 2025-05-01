@@ -4,6 +4,9 @@ import { SessionProvider } from "next-auth/react";
 import React, { useEffect, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { ThemeProviderProps } from "next-themes";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 const Providers = ({ children, ...props }: ThemeProviderProps) => {
   //I added this fix for the Hydration problem, regarding the theme
@@ -26,15 +29,22 @@ const Providers = ({ children, ...props }: ThemeProviderProps) => {
     // Safest approach recommended by next-themes: render children directly or null/fallback
     // Returning children assumes the children themselves don't cause mismatches
     // before theme/session is ready.
-    return <>{children}</>;
+    return (
+      <QueryClientProvider client={queryClient}>
+        <SessionProvider>{children}</SessionProvider> //added session provider,
+        was missing also
+      </QueryClientProvider>
+    );
     // Alternatively, if SessionProvider *needs* to wrap early:
     // return <SessionProvider>{children}</SessionProvider>; - test this if needed
   }
 
   return (
-    <ThemeProvider {...props} attribute="class" defaultTheme="light">
-      <SessionProvider>{children}</SessionProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider {...props} attribute="class" defaultTheme="light">
+        <SessionProvider>{children}</SessionProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 };
 
